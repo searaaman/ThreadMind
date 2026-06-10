@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 import os
 
-conversation_history = []
+conversation_histories = {}
 load_dotenv()
 
 app = FastAPI()
@@ -12,6 +12,7 @@ app = FastAPI()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class ChatRequest(BaseModel):
+    user_id: str
     message: str
 
 @app.get("/")
@@ -20,13 +21,15 @@ def home():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    conversation_history.append(f"User: {request.message}")
+    if request.user_id not in conversation_histories:
+        conversation_histories[request.user_id] = []
+    conversation_histories[request.user_id].append(f"User: {request.message}")
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents="\n".join(conversation_history),
+        contents="\n".join(conversation_histories[request.user_id])
     )
-    
-    conversation_history.append(f"AI: {response.text}")
+
+    conversation_histories[request.user_id].append(f"AI: {response.text}")
 
     return {
         "reply": response.text
