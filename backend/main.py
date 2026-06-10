@@ -1,10 +1,10 @@
+from database import save_message, get_history
 from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from google import genai
 import os
 
-conversation_histories = {}
 load_dotenv()
 
 app = FastAPI()
@@ -21,16 +21,25 @@ def home():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    if request.user_id not in conversation_histories:
-        conversation_histories[request.user_id] = []
-    conversation_histories[request.user_id].append(f"User: {request.message}")
+    save_message(
+        request.user_id,
+        "User",
+        request.message
+    )
+    history= get_history (request.user_id)
+    print(history)
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents="\n".join(conversation_histories[request.user_id])
+        contents="\n".join(history)
+        
     )
 
-    conversation_histories[request.user_id].append(f"AI: {response.text}")
-
+    save_message(
+        request.user_id,
+        "AI",
+        response.text
+    )
+    
     return {
         "reply": response.text
     }
