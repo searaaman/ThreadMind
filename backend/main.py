@@ -10,6 +10,7 @@ load_dotenv()
 
 from fastapi import Depends, FastAPI, Header, HTTPException  # noqa: E402
 from fastapi.responses import StreamingResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 import database as db  # noqa: E402
@@ -213,3 +214,7 @@ def delete_memory(memory_id: int, user_id: str = Depends(current_user)):
 @app.delete("/api/memories", status_code=204)
 def clear_memories(user_id: str = Depends(current_user)):
     db.clear_memories(user_id)
+
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
